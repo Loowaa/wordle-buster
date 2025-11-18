@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Buster</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .wordle-row {
+            display: flex;
+            justify-content: center;
+            margin: 10px;
+        }
+        .letter {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 50px;
+            background-color: white;
+            border: 2px solid black;
+            cursor: pointer;
+        }
+        .grey { background-color: gray; color: white; }
+        .yellow { background-color: gold; }
+        .green { background-color: green; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Wordle Buster</h1>
+
+    <label for="wordSelect">Select a Word:</label>
+    <select id="wordSelect"></select>
+
+    <div class="wordle-row">
+        <div class="letter" onclick="cycleColor(this)"></div>
+        <div class="letter" onclick="cycleColor(this)"></div>
+        <div class="letter" onclick="cycleColor(this)"></div>
+        <div class="letter" onclick="cycleColor(this)"></div>
+        <div class="letter" onclick="cycleColor(this)"></div>
+    </div>
+
+    <button onclick="submitGuess()">Submit</button>
+
+    <h2>Remaining Words:</h2>
+    <div id="remainingWords"></div>
+
+    <script>
+        let wordList = [
+            "place", "aloud", "draft", "valid", "badly", "madly", "words", "about", "small",
+            "build", "paper", "clear", "river", "times", "happy", "north", "value", "ocean"
+        ]; // Full word list
+
+        function populateDropdown() {
+            let select = document.getElementById("wordSelect");
+            select.innerHTML = "";
+            wordList.forEach(word => {
+                let option = document.createElement("option");
+                option.value = word;
+                option.textContent = word;
+                select.appendChild(option);
+            });
+        }
+
+        function cycleColor(element) {
+            let colors = ["white", "gray", "gold", "green"];
+            let classes = ["", "grey", "yellow", "green"];
+            let currentClass = element.className;
+            let nextIndex = (classes.indexOf(currentClass) + 1) % classes.length;
+            element.className = classes[nextIndex];
+        }
+
+        function submitGuess() {
+            let selectedWord = document.getElementById("wordSelect").value;
+            if (!selectedWord) return alert("Please select a word!");
+
+            let letters = document.querySelectorAll(".wordle-row .letter");
+            let feedback = Array.from(letters).map(letter => letter.className || "neutral");
+
+            console.log("Guess:", selectedWord, "Feedback:", feedback);
+
+            // Apply word filtering based on feedback
+            wordList = wordList.filter(word => {
+                for (let i = 0; i < 5; i++) {
+                    let letter = selectedWord[i];
+                    let state = feedback[i];
+
+                    if (state === "grey" && word.includes(letter)) return false;
+                    if (state === "yellow" && (word[i] === letter || !word.includes(letter))) return false;
+                    if (state === "green" && word[i] !== letter) return false;
+                }
+                return true;
+            });
+
+            populateDropdown();
+            displayRemainingWords();
+        }
+
+        function displayRemainingWords() {
+            document.getElementById("remainingWords").innerHTML = wordList.join(", ");
+        }
+
+        // Initialize dropdown with all words
+        populateDropdown();
+    </script>
+
+</body>
+</html>
