@@ -170,6 +170,13 @@ def render_board(session: WordleSession):
 
 def render_clickable_grid():
     """Clickable 6x5 grid for choosing colors (emoji buttons)."""
+
+    # Safety: ensure required keys exist
+    if "active_row" not in st.session_state:
+        st.session_state["active_row"] = 0
+    if "color_grid" not in st.session_state:
+        st.session_state["color_grid"] = [["b"] * 5 for _ in range(6)]
+
     st.subheader("Color Pattern Grid")
 
     active_row = st.session_state["active_row"]
@@ -212,59 +219,61 @@ def main():
 
     session: WordleSession = st.session_state["session"]
 
-st.markdown("### 🧠 Wordle Buster")
-st.caption("A helper tool to narrow down Wordle candidates from your guesses.")
+    st.markdown("### 🧠 Wordle Buster")
+    st.caption("A helper tool to narrow down Wordle candidates from your guesses.")
 
-left_col, right_col = st.columns([2, 3])
+    left_col, right_col = st.columns([2, 3])
 
-with left_col:
-    # TOP LEFT: Add Guess
-    st.subheader("Add a Guess")
+    with left_col:
+        # TOP LEFT: Add Guess
+        st.subheader("Add a Guess")
 
-    with st.form("add_guess_form"):
-        guess = st.text_input(
-            "Guess word (5 letters):",
-            max_chars=5,
-            placeholder="e.g. crane",
-        ).strip().lower()
+        with st.form("add_guess_form"):
+            guess = st.text_input(
+                "Guess word (5 letters):",
+                max_chars=5,
+                placeholder="e.g. crane",
+            ).strip().lower()
 
-        submitted = st.form_submit_button("Apply Guess")
+            submitted = st.form_submit_button("Apply Guess")
 
-    if submitted:
-        if len(guess) != 5 or not guess.isalpha():
-            st.error("Guess must be exactly 5 letters (A–Z).")
-        else:
-            row = st.session_state["active_row"]
-            pattern = "".join(st.session_state["color_grid"][row])
+        if submitted:
+            if len(guess) != 5 or not guess.isalpha():
+                st.error("Guess must be exactly 5 letters (A–Z).")
+            else:
+                row = st.session_state["active_row"]
+                pattern = "".join(st.session_state["color_grid"][row])
 
-            session.add_guess(guess, pattern)
-            st.success(
-                f"Added {guess.upper()} with pattern "
-                f"{' '.join(COLOR_EMOJI[ch] for ch in pattern)} "
-                f"({pattern})"
-            )
+                session.add_guess(guess, pattern)
+                st.success(
+                    f"Added {guess.upper()} with pattern "
+                    f"{' '.join(COLOR_EMOJI[ch] for ch in pattern)} "
+                    f"({pattern})"
+                )
 
-            if row < 5:
-                st.session_state["active_row"] = row + 1
+                if row < 5:
+                    st.session_state["active_row"] = row + 1
 
+                st.rerun()
+
+        if st.button("Reset session"):
+            st.session_state.clear()
             st.rerun()
 
-    if st.button("Reset session"):
-        st.session_state.clear()
-        st.rerun()
+        st.markdown("---")
 
-    st.markdown("---")
+        # BELOW: Color Pattern Grid
+        render_clickable_grid()
 
-    # BELOW: Color Pattern Grid
-    render_clickable_grid()
+    with right_col:
+        # TOP RIGHT: Guess Board
+        render_board(session)
 
-with right_col:
-    # TOP RIGHT: Guess Board
-    render_board(session)
+        # BELOW: Remaining Candidates
+        candidates = session.get_candidates()
+        render_candidates(candidates)
 
-    # BELOW: Remaining Candidates
-    candidates = session.get_candidates()
-    render_candidates(candidates)
 
 if __name__ == "__main__":
     main()
+
